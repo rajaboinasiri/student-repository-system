@@ -1,0 +1,22 @@
+# Environment variables
+.env
+.env.*
+!.env.example
+
+# Java build files
+backend/target/
+*.class
+
+# IDE settings
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# Logs
+*.log
+
+# Private credentials
+*.pem
+*.key
