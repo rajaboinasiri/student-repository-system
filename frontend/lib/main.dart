@@ -1,121 +1,474 @@
+
 import 'package:flutter/material.dart';
+import 'services/student_service.dart';
 
 void main() {
   runApp(const MyApp());
 }
 
+// MAIN APPLICATION
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      title: 'Flutter Demo',
-      theme: ThemeData(
-        // This is the theme of your application.
-        //
-        // TRY THIS: Try running your application with "flutter run". You'll see
-        // the application has a purple toolbar. Then, without quitting the app,
-        // try changing the seedColor in the colorScheme below to Colors.green
-        // and then invoke "hot reload" (save your changes or press the "hot
-        // reload" button in a Flutter-supported IDE, or press "r" if you used
-        // the command line to start the app).
-        //
-        // Notice that the counter didn't reset back to zero; the application
-        // state is not lost during the reload. To reset the state, use hot
-        // restart instead.
-        //
-        // This works for code too, not just values: Most code changes can be
-        // tested with just a hot reload.
-        colorScheme: .fromSeed(seedColor: Colors.deepPurple),
-      ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+    return const MaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: StudentListScreen(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  const MyHomePage({super.key, required this.title});
-
-  // This widget is the home page of your application. It is stateful, meaning
-  // that it has a State object (defined below) that contains fields that affect
-  // how it looks.
-
-  // This class is the configuration for the state. It holds the values (in this
-  // case the title) provided by the parent (in this case the App widget) and
-  // used by the build method of the State. Fields in a Widget subclass are
-  // always marked "final".
-
-  final String title;
+// STUDENT LIST SCREEN
+class StudentListScreen extends StatefulWidget {
+  const StudentListScreen({super.key});
 
   @override
-  State<MyHomePage> createState() => _MyHomePageState();
+  State<StudentListScreen> createState() =>
+      _StudentListScreenState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
-  int _counter = 0;
+class _StudentListScreenState extends State<StudentListScreen> {
+  final StudentService studentService = StudentService();
 
-  void _incrementCounter() {
+  late Future<List<dynamic>> studentsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    studentsFuture = studentService.getStudents();
+  }
+
+  // REFRESH STUDENT LIST
+  void refreshStudents() {
     setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _counter++;
+      studentsFuture = studentService.getStudents();
     });
   }
 
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
-    return Scaffold(
-      appBar: AppBar(
-        // TRY THIS: Try changing the color here to a specific color (to
-        // Colors.amber, perhaps?) and trigger a hot reload to see the AppBar
-        // change color while the other colors stay the same.
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: .center,
-          children: [
-            const Text('You have pushed the button this many times:'),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
+  // ADD STUDENT
+  Future<void> _showAddStudentDialog() async {
+    final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    final courseController = TextEditingController();
+
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Add Student'),
+
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Student Name',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Enter student name'
+                              : null,
+                    ),
+
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      validator: (value) =>
+                          value == null ||
+                                  !RegExp(r'^[^@]+@[^@]+\.[^@]+$')
+                                      .hasMatch(value.trim())
+                              ? 'Enter a valid email'
+                              : null,
+                    ),
+
+                    TextFormField(
+                      controller: courseController,
+                      decoration: const InputDecoration(
+                        labelText: 'Course',
+                        prefixIcon: Icon(Icons.school),
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Enter course'
+                              : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (result != true || !mounted) return;
+
+      await studentService.createStudent(
+        nameController.text.trim(),
+        emailController.text.trim(),
+        courseController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      refreshStudents();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Student added successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      nameController.dispose();
+      emailController.dispose();
+      courseController.dispose();
+    }
+  }
+
+  // EDIT STUDENT
+  Future<void> _showEditStudentDialog(
+      Map<String, dynamic> student) async {
+    final nameController =
+        TextEditingController(text: student['name'] ?? '');
+
+    final emailController =
+        TextEditingController(text: student['email'] ?? '');
+
+    final courseController =
+        TextEditingController(text: student['course'] ?? '');
+
+    final formKey = GlobalKey<FormState>();
+
+    try {
+      final result = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) {
+          return AlertDialog(
+            title: const Text('Edit Student'),
+
+            content: Form(
+              key: formKey,
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: nameController,
+                      decoration: const InputDecoration(
+                        labelText: 'Student Name',
+                        prefixIcon: Icon(Icons.person),
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Enter student name'
+                              : null,
+                    ),
+
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      decoration: const InputDecoration(
+                        labelText: 'Email',
+                        prefixIcon: Icon(Icons.email),
+                      ),
+                      validator: (value) =>
+                          value == null ||
+                                  !RegExp(r'^[^@]+@[^@]+\.[^@]+$')
+                                      .hasMatch(value.trim())
+                              ? 'Enter a valid email'
+                              : null,
+                    ),
+
+                    TextFormField(
+                      controller: courseController,
+                      decoration: const InputDecoration(
+                        labelText: 'Course',
+                        prefixIcon: Icon(Icons.school),
+                      ),
+                      validator: (value) =>
+                          value == null || value.trim().isEmpty
+                              ? 'Enter course'
+                              : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            actions: [
+              TextButton(
+                onPressed: () =>
+                    Navigator.pop(dialogContext, false),
+                child: const Text('Cancel'),
+              ),
+
+              ElevatedButton(
+                onPressed: () {
+                  if (formKey.currentState!.validate()) {
+                    Navigator.pop(dialogContext, true);
+                  }
+                },
+                child: const Text('Update'),
+              ),
+            ],
+          );
+        },
+      );
+
+      if (result != true || !mounted) return;
+
+      await studentService.updateStudent(
+        (student['id'] as num).toInt(),
+        nameController.text.trim(),
+        emailController.text.trim(),
+        courseController.text.trim(),
+      );
+
+      if (!mounted) return;
+
+      refreshStudents();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Student updated successfully!'),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error updating student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      nameController.dispose();
+      emailController.dispose();
+      courseController.dispose();
+    }
+  }
+
+  // DELETE STUDENT
+  Future<void> _deleteStudent(int id, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Delete Student'),
+
+          content: Text(
+            'Are you sure you want to delete $name?',
+          ),
+
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text('Cancel'),
+            ),
+
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              child: const Text('Delete'),
             ),
           ],
+        );
+      },
+    );
+
+    if (confirm != true || !mounted) return;
+
+    try {
+      await studentService.deleteStudent(id);
+
+      if (!mounted) return;
+
+      refreshStudents();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Student deleted successfully!'),
+          backgroundColor: Colors.green,
         ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Error deleting student: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  // BUILD SCREEN
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Student Management'),
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
+
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.refresh),
+            onPressed: refreshStudents,
+          ),
+        ],
       ),
+
+      // ADD STUDENT BUTTON
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _showAddStudentDialog,
+        backgroundColor: Colors.blue,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
+      ),
+
+      // DISPLAY STUDENTS
+      body: FutureBuilder<List<dynamic>>(
+        future: studentsFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState ==
+              ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator(),
+            );
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Text('Error: ${snapshot.error}'),
+            );
+          }
+
+          final students = snapshot.data ?? [];
+
+          if (students.isEmpty) {
+            return const Center(
+              child: Text('No students found'),
+            );
+          }
+
+          return ListView.builder(
+            itemCount: students.length,
+            itemBuilder: (context, index) {
+              final student =
+                  Map<String, dynamic>.from(students[index]);
+
+              return Card(
+                margin: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+
+                child: ListTile(
+                  leading: CircleAvatar(
+                    backgroundColor: Colors.blue,
+                    foregroundColor: Colors.white,
+                    child: Text('${student['id']}'),
+                  ),
+
+                  title: Text(
+                    student['name'] ?? '',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+
+                  subtitle: Text(
+                    '${student['email']}\n'
+                    'Course: ${student['course']}',
+                  ),
+
+                  isThreeLine: true,
+
+                  // EDIT AND DELETE BUTTONS
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // EDIT BUTTON
+                      IconButton(
+                        icon: const Icon(
+                          Icons.edit,
+                          color: Colors.blue,
+                        ),
+                        onPressed: () {
+                          _showEditStudentDialog(student);
+                        },
+                      ),
+
+                      // DELETE BUTTON
+                      IconButton(
+                        icon: const Icon(
+                          Icons.delete,
+                          color: Colors.red,
+                        ),
+                        onPressed: () {
+                          _deleteStudent(
+                            (student['id'] as num).toInt(),
+                            student['name'] ?? '',
+                          );
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          );
+        },
       ),
     );
   }

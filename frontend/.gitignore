@@ -46,3 +46,22 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Flutter generated files
+frontend/.dart_tool/
+frontend/build/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+
+# Android local configuration
+frontend/android/local.properties
+
+# Java build files
+backend/target/
+
+# Android signing credentials
+*.jks
+*.keystore
+
+# Firebase private credentials
+service-account*.json
